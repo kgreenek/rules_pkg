@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# vi: ft=python
 
 # Copyright 2021 The Bazel Authors. All rights reserved.
 #
@@ -85,8 +86,9 @@ class NativeInstaller(object):
         logging.debug("MKDIR %s %s", mode, dirname)
         os.makedirs(dirname, int(mode, 8), exist_ok=True)
 
-    def _do_symlink(self, target, link_name, mode, user, group):
-        raise NotImplementedError("symlinking not yet supported")
+    def _do_symlink(self, src, dest, mode, user, group):
+        logging.info("SYMLINK %s <- %s", dest, src)
+        os.symlink(src, dest)
 
     def _maybe_make_unowned_dir(self, path):
         logging.debug("MKDIR (unowned) %s", path)
@@ -148,10 +150,10 @@ class NativeInstaller(object):
         self._chown_chmod(entry.dest, top_dir_mode, entry.user, entry.group)
 
     def _install_symlink(self, entry):
-        raise NotImplementedError("symlinking not yet supported")
-        logging.debug("SYMLINK %s <- %s", entry.dest, entry.link_to)
-        logging.debug("CHMOD %s %s", entry.dest, entry.mode)
-        logging.debug("CHOWN %s.%s %s", entry.dest, entry.user, entry.group)
+        self._maybe_make_unowned_dir(os.path.dirname(entry.dest))
+        self._do_symlink(entry.src, entry.dest, entry.mode, entry.user, entry.group)
+        logging.info("SYMLINK %s <- %s", entry.dest, entry.src)
+        logging.info("CHMOD %s %s", entry.dest, entry.mode)
 
     def include_manifest_path(self, path):
         with open(path, 'r') as fh:
